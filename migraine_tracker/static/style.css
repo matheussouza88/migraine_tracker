@@ -1,0 +1,303 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #12131c;
+  color: #f1f2f6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+h1 {
+  font-size: 2.1rem;
+  color: #ff7675;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+
+.tagline {
+  font-size: 0.95rem;
+  color: #a4b0be;
+}
+
+main {
+  width: 100%;
+  max-width: 540px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tracker-card {
+  background: #1e202d;
+  border-radius: 18px;
+  padding: 22px 18px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  border: 1px solid #2f3542;
+}
+
+.main-action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.timer-display {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: clamp(2.4rem, 9vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #ffeaa7;
+  margin-bottom: 10px;
+}
+
+.timer-status {
+  margin-bottom: 20px;
+}
+
+.badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.active-badge {
+  background-color: #d63031;
+  color: white;
+  animation: pulse 1.5s infinite;
+}
+
+.idle-badge {
+  background-color: #485460;
+  color: #d2dae2;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { opacity: 0.8; }
+}
+
+.action-buttons {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.btn {
+  font-size: 1.15rem;
+  font-weight: 700;
+  padding: 16px 28px;
+  border-radius: 30px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  max-width: 320px;
+  touch-action: manipulation;
+}
+
+.btn-migraine {
+  background: linear-gradient(135deg, #e17055, #d63031);
+  color: white;
+  box-shadow: 0 4px 15px rgba(214, 48, 49, 0.4);
+}
+
+.btn-migraine:hover, .btn-migraine:active {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.btn-stop {
+  background: linear-gradient(135deg, #00b894, #00cec9);
+  color: #12131c;
+  box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4);
+}
+
+.btn-stop:hover, .btn-stop:active {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.meds-card h3 {
+  font-size: 1.15rem;
+  color: #74b9ff;
+  margin-bottom: 4px;
+}
+
+.meds-card .subtitle {
+  font-size: 0.82rem;
+  color: #a4b0be;
+  margin-bottom: 16px;
+}
+
+.med-buttons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.btn-med {
+  font-size: 1rem;
+  padding: 14px 10px;
+  border-radius: 14px;
+  max-width: none;
+}
+
+.btn-painkiller {
+  background-color: #0984e3;
+  color: white;
+  box-shadow: 0 4px 12px rgba(9, 132, 227, 0.35);
+}
+
+.btn-sumatriptan {
+  background-color: #6c5ce7;
+  color: white;
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.35);
+}
+
+.btn-med:hover, .btn-med:active {
+  transform: translateY(-2px);
+  filter: brightness(1.15);
+}
+
+.feedback-msg {
+  font-size: 0.85rem;
+  margin-top: 10px;
+  text-align: center;
+  min-height: 20px;
+}
+
+.feedback-msg.success {
+  color: #55efc4;
+}
+
+.feedback-msg.error {
+  color: #ff7675;
+}
+
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.stat-card {
+  background: #1e202d;
+  border: 1px solid #2f3542;
+  border-radius: 14px;
+  padding: 14px 8px;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #ffeaa7;
+}
+
+.stat-label {
+  font-size: 0.72rem;
+  color: #a4b0be;
+  margin-top: 4px;
+}
+
+.history-section h3 {
+  font-size: 1.05rem;
+  margin-bottom: 12px;
+  color: #fdcb6e;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.history-table th, .history-table td {
+  padding: 10px 6px;
+  text-align: center;
+  border-bottom: 1px solid #2f3542;
+  white-space: nowrap;
+}
+
+.history-table th {
+  color: #a4b0be;
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
+.duration-highlight {
+  font-weight: 700;
+  color: #ffeaa7;
+}
+
+.med-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.med-painkiller {
+  background-color: rgba(9, 132, 227, 0.25);
+  color: #74b9ff;
+  border: 1px solid rgba(9, 132, 227, 0.5);
+}
+
+.med-sumatriptan {
+  background-color: rgba(108, 92, 231, 0.25);
+  color: #a29bfe;
+  border: 1px solid rgba(108, 92, 231, 0.5);
+}
+
+.btn-delete {
+  background: transparent;
+  border: 1px solid #3d4354;
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.btn-delete:hover {
+  background-color: #d63031;
+  border-color: #d63031;
+}
+
+@media (max-width: 480px) {
+  .stats-container {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+  }
+  .stat-value {
+    font-size: 1.15rem;
+  }
+  .stat-label {
+    font-size: 0.68rem;
+  }
+}

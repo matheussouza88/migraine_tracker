@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock title %}
+
+{% block content %}
+<div class="tracker-card main-action-card">
+  <div class="timer-display" id="timerDisplay">00:00:00</div>
+  <div class="timer-status" id="timerStatus">
+    {% if active_episode %}
+      <span class="badge active-badge">⚡ Migraine in Progress...</span>
+    {% else %}
+      <span class="badge idle-badge">No Active Migraine</span>
+    {% endif %}
+  </div>
+
+  <div class="action-buttons">
+    <button id="migraineBtn" class="btn {% if active_episode %}btn-stop{% else %}btn-migraine{% endif %}">
+      {% if active_episode %}
+        🛑 End Migraine Episode
+      {% else %}
+        ⚡ I Have a Migraine
+      {% endif %}
+    </button>
+  </div>
+</div>
+
+<div class="tracker-card meds-card">
+  <h3>💊 Log Medication</h3>
+  <p class="subtitle">Quickly register medication taken for this episode</p>
+  <div class="med-buttons-grid">
+    <button class="btn btn-med btn-painkiller" onclick="logMedication('painkiller')">
+      💊 Painkiller
+    </button>
+    <button class="btn btn-med btn-sumatriptan" onclick="logMedication('sumatriptan')">
+      💉 Sumatriptan
+    </button>
+  </div>
+  <div id="medFeedback" class="feedback-msg"></div>
+</div>
+
+<div class="stats-container">
+  <div class="stat-card">
+    <div class="stat-value" id="totalEpisodes">{{ total_episodes }}</div>
+    <div class="stat-label">Episodes Logged</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="avgDuration">
+      {% set minutes = (avg_seconds // 60) %}
+      {% set hours = (minutes // 60) %}
+      {% set rem_minutes = (minutes % 60) %}
+      {% if hours > 0 %}
+        {{ hours }}h {{ rem_minutes }}m
+      {% else %}
+        {{ rem_minutes }}m
+      {% endif %}
+    </div>
+    <div class="stat-label">Avg Episode Duration</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="totalMeds">{{ total_medications }}</div>
+    <div class="stat-label">Meds Taken</div>
+  </div>
+</div>
+
+<div class="history-section tracker-card">
+  <h3>Recent Migraines</h3>
+  <div class="table-responsive">
+    <table class="history-table" id="episodesTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Duration</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ep in history %}
+        <tr id="ep-row-{{ ep.id }}">
+          <td>{{ ep.start_time.strftime('%Y-%m-%d') }}</td>
+          <td>{{ ep.start_time.strftime('%H:%M:%S') }}</td>
+          <td>{{ ep.end_time.strftime('%H:%M:%S') if ep.end_time else '-' }}</td>
+          <td class="duration-highlight">
+            {% if ep.duration_seconds is not none %}
+              {% set m = ep.duration_seconds // 60 %}
+              {% set h = m // 60 %}
+              {% set rem_m = m % 60 %}
+              {% if h > 0 %}
+                {{ h }}h {{ rem_m }}m
+              {% else %}
+                {{ rem_m }}m {{ ep.duration_seconds % 60 }}s
+              {% endif %}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td>
+            <button class="btn-delete" title="Delete episode" onclick="deleteEpisode({{ ep.id }})">🗑️</button>
+          </td>
+        </tr>
+        {% else %}
+        <tr id="emptyEpisodeRow">
+          <td colspan="5">No completed episodes logged yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="history-section tracker-card">
+  <h3>Medication History</h3>
+  <div class="table-responsive">
+    <table class="history-table" id="medsTable">
+      <thead>
+        <tr>
+          <th>Date &amp; Time</th>
+          <th>Medication</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for med in medications %}
+        <tr id="med-row-{{ med.id }}">
+          <td>{{ med.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+          <td><span class="med-tag med-{{ med.medication_type.lower() }}">{{ med.medication_type }}</span></td>
+          <td>
+            <button class="btn-delete" title="Delete med log" onclick="deleteMedication({{ med.id }})">🗑️</button>
+          </td>
+        </tr>
+        {% else %}
+        <tr id="emptyMedsRow">
+          <td colspan="3">No medication intakes logged yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  let timerInterval = null;
+  let activeEpisodeStartTime = null;
+
+  function formatTime(seconds) {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
+  }
+
+  function updateDisplay() {
+    if (!activeEpisodeStartTime) return;
+    const now = new Date();
+    const elapsedSeconds = Math.max(0, Math.floor((now.getTime() - activeEpisodeStartTime.getTime()) / 1000));
+    document.getElementById('timerDisplay').innerText = formatTime(elapsedSeconds);
+  }
+
+  async function checkStatus() {
+    try {
+      const res = await fetch('/api/status');
+      const data = await res.json();
+      const btn = document.getElementById('migraineBtn');
+      const status = document.getElementById('timerStatus');
+
+      if (data.is_active && data.episode) {
+        activeEpisodeStartTime = new Date(data.episode.start_time);
+        btn.innerText = '🛑 End Migraine Episode';
+        btn.className = 'btn btn-stop';
+        status.innerHTML = '<span class="badge active-badge">⚡ Migraine in Progress...</span>';
+
+        if (!timerInterval) {
+          updateDisplay();
+          timerInterval = setInterval(updateDisplay, 1000);
+        }
+      } else {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = null;
+        activeEpisodeStartTime = null;
+        document.getElementById('timerDisplay').innerText = '00:00:00';
+        btn.innerText = '⚡ I Have a Migraine';
+        btn.className = 'btn btn-migraine';
+        status.innerHTML = '<span class="badge idle-badge">No Active Migraine</span>';
+      }
+    } catch (err) {
+      console.error('Failed to query status:', err);
+    }
+  }
+
+  document.getElementById('migraineBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('migraineBtn');
+    btn.disabled = true;
+
+    try {
+      if (activeEpisodeStartTime) {
+        const res = await fetch('/api/finish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        if (res.ok) {
+          window.location.reload();
+        }
+      } else {
+        const res = await fetch('/api/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ severity: 'moderate' })
+        });
+        if (res.ok) {
+          await checkStatus();
+        }
+      }
+    } catch (err) {
+      console.error('Error toggling migraine episode:', err);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  async function logMedication(type) {
+    const feedback = document.getElementById('medFeedback');
+    feedback.innerText = 'Recording...';
+    try {
+      const res = await fetch('/api/medication', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ medication_type: type })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        feedback.innerText = `Recorded: ${data.entry.medication_type} taken!`;
+        feedback.className = 'feedback-msg success';
+        setTimeout(() => {
+          window.location.reload();
+        }, 800);
+      } else {
+        feedback.innerText = data.error || 'Failed to record medication.';
+        feedback.className = 'feedback-msg error';
+      }
+    } catch (err) {
+      feedback.innerText = 'Network error recording medication.';
+      feedback.className = 'feedback-msg error';
+    }
+  }
+
+  async function deleteEpisode(id) {
+    if (!confirm('Are you sure you want to delete this migraine episode?')) return;
+    try {
+      const res = await fetch(`/api/history/episode/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        const row = document.getElementById(`ep-row-${id}`);
+        if (row) row.remove();
+        setTimeout(() => window.location.reload(), 300);
+      }
+    } catch (err) {
+      alert('Error deleting episode');
+    }
+  }
+
+  async function deleteMedication(id) {
+    if (!confirm('Are you sure you want to delete this medication log?')) return;
+    try {
+      const res = await fetch(`/api/history/medication/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        const row = document.getElementById(`med-row-${id}`);
+        if (row) row.remove();
+        setTimeout(() => window.location.reload(), 300);
+      }
+    } catch (err) {
+      alert('Error deleting medication log');
+    }
+  }
+
+  checkStatus();
+  setInterval(checkStatus, 15000);
+</script>
+{% endblock content %}
