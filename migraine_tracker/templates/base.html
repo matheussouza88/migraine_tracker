@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1e1e2f">
+  <title>Migraine Tracker - {% block title %}{% endblock title %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="app-header">
+  <div class="header-content">
+    <h1>⚡ Migraine Tracker</h1>
+    <p class="tagline">Monitor episodes &amp; medication intake</p>
+  </div>
+</header>
+<section>
+  <main>
+    {% block content %}{% endblock content %}
+  </main>
+</section>
+</body>
+</html>

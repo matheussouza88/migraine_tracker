@@ -1,0 +1,11 @@
+black~=26.5
+flask==3.1.3
+isort~=9.0.1
+pip-autoremove
+python-dotenv~=1.2
+flask_sqlalchemy~=3.1.1
+psycopg2-binary>=2.9.13
+gunicorn~=26.2.0
+pytest>=9.1.1
+pycodestyle~=2.12.1
+pyflakes~=3.2.0

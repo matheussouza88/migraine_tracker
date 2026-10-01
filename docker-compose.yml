@@ -1,0 +1,89 @@
+services:
+  migraine_tracker:
+    build: .
+    container_name: migraine_tracker
+    restart: unless-stopped
+    ports:
+      - "7070:7070"
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - LOG_LEVEL=INFO
+      - DATABASE_URL=postgresql+psycopg2://migraine_user:${DB_PASSWORD:-migraine_secure_pass}@migraine_tracker_db:5432/migraine_db
+      - SERVICE_NAME=migraine-tracker
+      - SERVICE_TAGS=health,tracker,web
+      - SERVICE_CHECK_HTTP=/health
+      - SERVICE_CHECK_INTERVAL=15s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 192M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
+    networks:
+      - consul_consul
+      - default
+    depends_on:
+      migraine_tracker_db:
+        condition: service_healthy
+
+  migraine_tracker_db:
+    image: postgres:16-alpine
+    container_name: migraine_tracker_db
+    restart: unless-stopped
+    command:
+      - "postgres"
+      - "-c"
+      - "log_destination=stderr"
+      - "-c"
+      - "logging_collector=off"
+      - "-c"
+      - "log_line_prefix=%m [%p] %u@%d: "
+      - "-c"
+      - "log_connections=on"
+      - "-c"
+      - "log_disconnections=on"
+      - "-c"
+      - "log_min_duration_statement=0"
+      - "-c"
+      - "log_lock_waits=on"
+      - "-c"
+      - "log_checkpoints=on"
+    environment:
+      POSTGRES_USER: migraine_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-migraine_secure_pass}
+      POSTGRES_DB: migraine_db
+      SERVICE_NAME: migraine-tracker-db
+      SERVICE_TAGS: "database,postgres"
+      SERVICE_5432_CHECK_TCP: "true"
+      SERVICE_5432_CHECK_INTERVAL: 10s
+      SERVICE_5432_CHECK_TIMEOUT: 3s
+    networks:
+      - consul_consul
+      - default
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 192M
+        reservations:
+          cpus: '0.05'
+          memory: 16M
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U migraine_user -d migraine_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:
+
+networks:
+  consul_consul:
+    external: true
+  default:
