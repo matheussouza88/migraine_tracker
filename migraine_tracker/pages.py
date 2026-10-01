@@ -4,24 +4,10 @@ from datetime import datetime, timezone
 from flask import Blueprint, jsonify, render_template, request
 from sqlalchemy import func, select
 
-from migraine_tracker.database import (
-    MedicationLog,
-    MigraineEpisode,
-    db,
-    ensure_utc,
-)
+from migraine_tracker.database import MedicationLog, MigraineCheckup, db
 
 bp = Blueprint("pages", __name__)
 logger = logging.getLogger("migraine_tracker.activity")
-
-
-def _get_active_episode():
-    return db.session.scalars(
-        select(MigraineEpisode)
-        .where(MigraineEpisode.end_time.is_(None))
-        .order_by(MigraineEpisode.start_time.desc())
-        .limit(1)
-    ).first()
 
 
 @bp.route("/health")
@@ -32,169 +18,93 @@ def health():
 
 @bp.route("/")
 def home():
-    active_episode = _get_active_episode()
-    history = db.session.scalars(
-        select(MigraineEpisode)
-        .where(MigraineEpisode.end_time.isnot(None))
-        .order_by(MigraineEpisode.start_time.desc())
-        .limit(30)
+    migraines = db.session.scalars(
+        select(MigraineCheckup).order_by(MigraineCheckup.timestamp.desc()).limit(30)
     ).all()
 
     medications = db.session.scalars(
         select(MedicationLog).order_by(MedicationLog.timestamp.desc()).limit(30)
     ).all()
 
-    stats_stmt = select(
-        func.count(MigraineEpisode.id),
-        func.coalesce(func.sum(MigraineEpisode.duration_seconds), 0),
-        func.coalesce(func.avg(MigraineEpisode.duration_seconds), 0),
-    ).where(MigraineEpisode.end_time.isnot(None))
-
-    total_episodes, total_seconds, avg_seconds = db.session.execute(stats_stmt).one()
-
+    total_migraines = db.session.scalar(select(func.count(MigraineCheckup.id))) or 0
     total_meds = db.session.scalar(select(func.count(MedicationLog.id))) or 0
 
+    last_migraine = migraines[0] if migraines else None
+    last_medication = medications[0] if medications else None
+
     logger.info(
-        "Home page accessed: active_episode=%s, total_history=%d, total_meds=%d",
-        bool(active_episode),
-        total_episodes,
+        "Home page accessed: total_migraines=%d, total_meds=%d",
+        total_migraines,
         total_meds,
     )
 
     return render_template(
         "pages/home.html",
-        active_episode=active_episode,
-        history=history,
+        migraines=migraines,
         medications=medications,
-        total_episodes=total_episodes,
-        avg_seconds=int(avg_seconds),
+        total_migraines=total_migraines,
         total_medications=total_meds,
+        last_migraine=last_migraine,
+        last_medication=last_medication,
     )
 
 
 @bp.route("/api/status", methods=["GET"])
 def get_status():
-    active_episode = _get_active_episode()
-    now_utc = datetime.now(timezone.utc)
-    if active_episode:
-        start_time = ensure_utc(active_episode.start_time)
-        elapsed = int((now_utc - start_time).total_seconds())
-        logger.debug(
-            "Status queried: is_active=True, episode_id=%d, elapsed=%ds",
-            active_episode.id,
-            elapsed,
-        )
-        return jsonify(
-            {
-                "is_active": True,
-                "episode": active_episode.to_dict(),
-                "elapsed_seconds": max(0, elapsed),
-                "server_time": now_utc.isoformat(),
-            }
-        )
+    last_migraine = db.session.scalars(
+        select(MigraineCheckup).order_by(MigraineCheckup.timestamp.desc()).limit(1)
+    ).first()
 
-    logger.debug("Status queried: is_active=False")
+    last_med = db.session.scalars(
+        select(MedicationLog).order_by(MedicationLog.timestamp.desc()).limit(1)
+    ).first()
+
+    total_migraines = db.session.scalar(select(func.count(MigraineCheckup.id))) or 0
+    total_meds = db.session.scalar(select(func.count(MedicationLog.id))) or 0
+
+    now_utc = datetime.now(timezone.utc)
     return jsonify(
         {
-            "is_active": False,
-            "episode": None,
-            "elapsed_seconds": 0,
+            "last_migraine": (last_migraine.to_dict() if last_migraine else None),
+            "last_medication": last_med.to_dict() if last_med else None,
+            "total_migraines": total_migraines,
+            "total_medications": total_meds,
             "server_time": now_utc.isoformat(),
         }
     )
 
 
-@bp.route("/api/start", methods=["POST"])
-def start_episode():
+@bp.route("/api/migraine", methods=["POST"])
+def log_migraine():
     client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "-")
-    active_episode = _get_active_episode()
-    if active_episode:
-        logger.warning(
-            "Episode start ignored: Episode #%d is already in progress "
-            "(started at %s, client: %s)",
-            active_episode.id,
-            active_episode.start_time.isoformat(),
-            client_ip,
-        )
-        return (
-            jsonify(
-                {
-                    "message": "Migraine episode already in progress.",
-                    "episode": active_episode.to_dict(),
-                }
-            ),
-            200,
-        )
-
     payload = request.get_json(silent=True) or {}
     severity = payload.get("severity", "moderate")
     notes = payload.get("notes")
 
-    new_episode = MigraineEpisode(
-        start_time=datetime.now(timezone.utc),
+    checkup = MigraineCheckup(
+        timestamp=datetime.now(timezone.utc),
         severity=severity,
         notes=notes,
     )
-    db.session.add(new_episode)
+    db.session.add(checkup)
     db.session.commit()
+
     logger.info(
-        "Migraine episode #%d STARTED at %s (client: %s)",
-        new_episode.id,
-        new_episode.start_time.isoformat(),
+        "Migraine checkup #%d LOGGED at %s (severity=%s, client: %s)",
+        checkup.id,
+        checkup.timestamp.isoformat(),
+        severity,
         client_ip,
     )
+
     return (
         jsonify(
             {
-                "message": "Migraine episode started!",
-                "episode": new_episode.to_dict(),
+                "message": "Migraine checkup recorded successfully!",
+                "checkup": checkup.to_dict(),
             }
         ),
         201,
-    )
-
-
-@bp.route("/api/finish", methods=["POST"])
-def finish_episode():
-    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "-")
-    active_episode = _get_active_episode()
-    if not active_episode:
-        logger.warning(
-            "Episode finish rejected: No active episode in progress (client: %s)",
-            client_ip,
-        )
-        return jsonify({"error": "No active migraine episode to finish."}), 400
-
-    now_utc = datetime.now(timezone.utc)
-    active_episode.end_time = now_utc
-    start_time = ensure_utc(active_episode.start_time)
-    duration = int((now_utc - start_time).total_seconds())
-    active_episode.duration_seconds = max(0, duration)
-
-    payload = request.get_json(silent=True) or {}
-    if "notes" in payload:
-        active_episode.notes = payload["notes"]
-    if "severity" in payload:
-        active_episode.severity = payload["severity"]
-
-    db.session.commit()
-
-    logger.info(
-        "Migraine episode #%d FINISHED: duration=%ds (%s -> %s, client: %s)",
-        active_episode.id,
-        active_episode.duration_seconds,
-        active_episode.start_time.isoformat(),
-        active_episode.end_time.isoformat(),
-        client_ip,
-    )
-    return (
-        jsonify(
-            {
-                "message": "Migraine episode ended successfully!",
-                "episode": active_episode.to_dict(),
-            }
-        ),
-        200,
     )
 
 
@@ -253,11 +163,8 @@ def log_medication():
 
 @bp.route("/api/history", methods=["GET"])
 def get_history():
-    episodes = db.session.scalars(
-        select(MigraineEpisode)
-        .where(MigraineEpisode.end_time.isnot(None))
-        .order_by(MigraineEpisode.start_time.desc())
-        .limit(100)
+    migraines = db.session.scalars(
+        select(MigraineCheckup).order_by(MigraineCheckup.timestamp.desc()).limit(100)
     ).all()
     medications = db.session.scalars(
         select(MedicationLog).order_by(MedicationLog.timestamp.desc()).limit(100)
@@ -265,28 +172,36 @@ def get_history():
 
     return jsonify(
         {
-            "episodes": [e.to_dict() for e in episodes],
+            "migraines": [m.to_dict() for m in migraines],
             "medications": [m.to_dict() for m in medications],
         }
     )
 
 
-@bp.route("/api/history/episode/<int:episode_id>", methods=["DELETE"])
-def delete_episode(episode_id):
+@bp.route("/api/history/migraine/<int:migraine_id>", methods=["DELETE"])
+def delete_migraine(migraine_id):
     client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "-")
-    episode = db.session.get(MigraineEpisode, episode_id)
-    if not episode:
+    entry = db.session.get(MigraineCheckup, migraine_id)
+    if not entry:
         logger.warning(
-            "Delete rejected: Episode #%d not found (client: %s)",
-            episode_id,
+            "Delete rejected: Migraine entry #%d not found (client: %s)",
+            migraine_id,
             client_ip,
         )
-        return jsonify({"error": "Episode not found."}), 404
+        return jsonify({"error": "Migraine checkup entry not found."}), 404
 
-    db.session.delete(episode)
+    db.session.delete(entry)
     db.session.commit()
-    logger.info("Migraine episode #%d DELETED (client: %s)", episode_id, client_ip)
-    return jsonify({"message": "Episode deleted successfully.", "id": episode_id}), 200
+    logger.info("Migraine checkup #%d DELETED (client: %s)", migraine_id, client_ip)
+    return (
+        jsonify(
+            {
+                "message": "Migraine checkup deleted successfully.",
+                "id": migraine_id,
+            }
+        ),
+        200,
+    )
 
 
 @bp.route("/api/history/medication/<int:med_id>", methods=["DELETE"])
@@ -305,6 +220,11 @@ def delete_medication(med_id):
     db.session.commit()
     logger.info("Medication log #%d DELETED (client: %s)", med_id, client_ip)
     return (
-        jsonify({"message": "Medication entry deleted successfully.", "id": med_id}),
+        jsonify(
+            {
+                "message": "Medication entry deleted successfully.",
+                "id": med_id,
+            }
+        ),
         200,
     )

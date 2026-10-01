@@ -42,73 +42,54 @@ def test_home_page(client):
     assert b"Sumatriptan" in response.data
 
 
-def test_status_endpoint_idle(client):
+def test_status_endpoint(client):
     response = client.get("/api/status")
     assert response.status_code == 200
     data = response.get_json()
-    assert data["is_active"] is False
-    assert data["episode"] is None
-    assert data["elapsed_seconds"] == 0
+    assert data["last_migraine"] is None
+    assert data["last_medication"] is None
+    assert data["total_migraines"] == 0
+    assert data["total_medications"] == 0
+    assert "server_time" in data
 
 
-def test_migraine_episode_lifecycle(client):
-    # 1. Start episode
-    start_resp = client.post(
-        "/api/start",
-        json={"severity": "high", "notes": "Throbbing headache on left side"},
+def test_migraine_instant_checkup(client):
+    # 1. Log a migraine moment
+    post_resp = client.post(
+        "/api/migraine",
+        json={"severity": "severe", "notes": "Sharp pain on temples"},
     )
-    assert start_resp.status_code == 201
-    start_data = start_resp.get_json()
-    assert "started" in start_data["message"]
-    ep_id = start_data["episode"]["id"]
-    assert start_data["episode"]["is_active"] is True
-    assert start_data["episode"]["severity"] == "high"
+    assert post_resp.status_code == 201
+    post_data = post_resp.get_json()
+    assert "recorded successfully" in post_data["message"]
+    checkup = post_data["checkup"]
+    assert checkup["severity"] == "severe"
+    assert checkup["notes"] == "Sharp pain on temples"
+    assert checkup["timestamp"] is not None
+    checkup_id = checkup["id"]
 
-    # 2. Check active status
+    # 2. Verify status endpoint reflects latest checkup
     status_resp = client.get("/api/status")
     assert status_resp.status_code == 200
     status_data = status_resp.get_json()
-    assert status_data["is_active"] is True
-    assert status_data["episode"]["id"] == ep_id
+    assert status_data["total_migraines"] == 1
+    assert status_data["last_migraine"]["id"] == checkup_id
 
-    # 3. Repeat start should be idempotent
-    repeat_start = client.post("/api/start")
-    assert repeat_start.status_code == 200
-    assert "already in progress" in repeat_start.get_json()["message"]
-
-    # 4. Finish episode
-    finish_resp = client.post(
-        "/api/finish",
-        json={"notes": "Throbbing headache eased up after rest"},
-    )
-    assert finish_resp.status_code == 200
-    finish_data = finish_resp.get_json()
-    assert finish_data["episode"]["is_active"] is False
-    assert finish_data["episode"]["duration_seconds"] is not None
-
-    # 5. Check status is idle again
-    status_resp_after = client.get("/api/status")
-    assert status_resp_after.get_json()["is_active"] is False
-
-    # 6. Check history contains completed episode
+    # 3. Check history endpoint
     hist_resp = client.get("/api/history")
     assert hist_resp.status_code == 200
     hist_data = hist_resp.get_json()
-    assert len(hist_data["episodes"]) == 1
-    assert hist_data["episodes"][0]["id"] == ep_id
+    assert len(hist_data["migraines"]) == 1
+    assert hist_data["migraines"][0]["id"] == checkup_id
 
-    # 7. Delete episode
-    del_resp = client.delete(f"/api/history/episode/{ep_id}")
+    # 4. Delete migraine record
+    del_resp = client.delete(f"/api/history/migraine/{checkup_id}")
     assert del_resp.status_code == 200
-    hist_data_empty = client.get("/api/history").get_json()
-    assert len(hist_data_empty["episodes"]) == 0
+    assert del_resp.get_json()["id"] == checkup_id
 
-
-def test_finish_without_active_episode(client):
-    response = client.post("/api/finish")
-    assert response.status_code == 400
-    data = response.get_json()
-    assert "No active migraine episode" in data["error"]
+    # 5. History should now be empty
+    hist_resp2 = client.get("/api/history")
+    assert len(hist_resp2.get_json()["migraines"]) == 0
 
 
 def test_medication_logging(client):
@@ -137,6 +118,12 @@ def test_medication_logging(client):
     hist = client.get("/api/history").get_json()
     assert len(hist["medications"]) == 2
 
+    # Check status endpoint
+    status_resp = client.get("/api/status")
+    status_data = status_resp.get_json()
+    assert status_data["total_medications"] == 2
+    assert status_data["last_medication"]["id"] == med_id_2
+
     # Delete Medication
     del_resp = client.delete(f"/api/history/medication/{med_id_1}")
     assert del_resp.status_code == 200
@@ -152,3 +139,13 @@ def test_invalid_medication_type(client):
     )
     assert response.status_code == 400
     assert "Invalid medication type" in response.get_json()["error"]
+
+
+def test_delete_nonexistent_records(client):
+    resp_mig = client.delete("/api/history/migraine/9999")
+    assert resp_mig.status_code == 404
+    assert "not found" in resp_mig.get_json()["error"]
+
+    resp_med = client.delete("/api/history/medication/9999")
+    assert resp_med.status_code == 404
+    assert "not found" in resp_med.get_json()["error"]
