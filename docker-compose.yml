@@ -24,8 +24,9 @@ services:
           cpus: '0.05'
           memory: 32M
     networks:
-      - consul_consul
-      - default
+      consul_consul:
+        aliases:
+          - migraine_tracker
     depends_on:
       migraine_tracker_db:
         condition: service_healthy
@@ -62,8 +63,9 @@ services:
       SERVICE_5432_CHECK_INTERVAL: 10s
       SERVICE_5432_CHECK_TIMEOUT: 3s
     networks:
-      - consul_consul
-      - default
+      consul_consul:
+        aliases:
+          - migraine_tracker_db
     deploy:
       resources:
         limits:
@@ -86,4 +88,3 @@ volumes:
 networks:
   consul_consul:
     external: true
-  default:
