@@ -55,6 +55,21 @@ main {
   align-items: center;
 }
 
+.card-header-label {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ff7675;
+  margin-bottom: 4px;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.font-smaller {
+  font-size: 1.05rem;
+}
+
 .timer-display {
   font-family: 'Courier New', Courier, monospace;
   font-size: clamp(2.4rem, 9vw, 3.4rem);
@@ -75,6 +90,14 @@ main {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.severity-badge {
+  background-color: rgba(225, 112, 85, 0.2);
+  color: #ff7675;
+  border: 1px solid rgba(225, 112, 85, 0.4);
+  font-size: 0.75rem;
+  padding: 3px 8px;
 }
 
 .active-badge {
