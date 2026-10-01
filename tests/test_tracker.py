@@ -92,6 +92,63 @@ def test_migraine_instant_checkup(client):
     assert len(hist_resp2.get_json()["migraines"]) == 0
 
 
+def test_update_migraine_severity(client):
+    # 1. Create a checkup with default moderate severity
+    post_resp = client.post("/api/migraine", json={})
+    assert post_resp.status_code == 201
+    checkup_id = post_resp.get_json()["checkup"]["id"]
+    assert post_resp.get_json()["checkup"]["severity"] == "moderate"
+
+    # 2. Update to mild
+    patch_mild = client.patch(
+        f"/api/migraine/{checkup_id}",
+        json={"severity": "mild", "notes": "Mild pressure only"},
+    )
+    assert patch_mild.status_code == 200
+    mild_data = patch_mild.get_json()
+    assert mild_data["checkup"]["severity"] == "mild"
+    assert mild_data["checkup"]["notes"] == "Mild pressure only"
+
+    # 3. Update to severe
+    patch_severe = client.patch(
+        f"/api/migraine/{checkup_id}",
+        json={"severity": "severe"},
+    )
+    assert patch_severe.status_code == 200
+    assert patch_severe.get_json()["checkup"]["severity"] == "severe"
+
+    # 4. Verify in history
+    hist_resp = client.get("/api/history")
+    assert hist_resp.status_code == 200
+    migraines = hist_resp.get_json()["migraines"]
+    assert len(migraines) == 1
+    assert migraines[0]["severity"] == "severe"
+
+
+def test_invalid_migraine_severity(client):
+    # Reject invalid on POST
+    post_resp = client.post("/api/migraine", json={"severity": "extreme"})
+    assert post_resp.status_code == 400
+    assert "Invalid severity level" in post_resp.get_json()["error"]
+
+    # Create valid
+    valid_resp = client.post("/api/migraine", json={"severity": "moderate"})
+    checkup_id = valid_resp.get_json()["checkup"]["id"]
+
+    # Reject invalid on PATCH
+    patch_resp = client.patch(
+        f"/api/migraine/{checkup_id}",
+        json={"severity": "unbearable"},
+    )
+    assert patch_resp.status_code == 400
+    assert "Invalid severity level" in patch_resp.get_json()["error"]
+
+    # Nonexistent checkup PATCH
+    not_found_resp = client.patch("/api/migraine/9999", json={"severity": "mild"})
+    assert not_found_resp.status_code == 404
+    assert "not found" in not_found_resp.get_json()["error"]
+
+
 def test_medication_logging(client):
     # Log Painkiller
     pk_resp = client.post(

@@ -121,6 +121,7 @@ main {
   width: 100%;
   display: flex;
   justify-content: center;
+  margin-top: 6px;
 }
 
 .btn {
@@ -156,6 +157,73 @@ main {
 .btn-stop:hover, .btn-stop:active {
   transform: translateY(-2px);
   filter: brightness(1.1);
+}
+
+.severity-picker-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 8px;
+}
+
+.picker-label {
+  font-size: 0.85rem;
+  color: #a4b0be;
+}
+
+.severity-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-pill {
+  padding: 5px 12px;
+  border-radius: 14px;
+  border: 1px solid #3d4354;
+  background: #181924;
+  color: #a4b0be;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-pill:hover {
+  filter: brightness(1.2);
+}
+
+.btn-pill.active.sev-mild, .severity-select.sev-mild {
+  background: rgba(255, 234, 167, 0.15);
+  border-color: #ffeaa7;
+  color: #ffeaa7;
+}
+
+.btn-pill.active.sev-moderate, .severity-select.sev-moderate {
+  background: rgba(225, 112, 85, 0.2);
+  border-color: #e17055;
+  color: #fab1a0;
+}
+
+.btn-pill.active.sev-severe, .severity-select.sev-severe {
+  background: rgba(214, 48, 49, 0.25);
+  border-color: #d63031;
+  color: #ff7675;
+}
+
+.severity-select {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  background-color: #1e202d;
+  transition: all 0.2s ease;
+}
+
+.severity-select option {
+  background-color: #1e202d;
+  color: #f1f2f6;
 }
 
 .meds-card h3 {
@@ -213,6 +281,29 @@ main {
 
 .feedback-msg.error {
   color: #ff7675;
+}
+
+.quick-severity-adjust {
+  display: inline-flex;
+  gap: 6px;
+  margin-top: 6px;
+  align-items: center;
+}
+
+.btn-quick-sev {
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid #3d4354;
+  background: #252838;
+  color: #d2dae2;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-quick-sev:hover {
+  filter: brightness(1.2);
 }
 
 .stats-container {
@@ -310,6 +401,30 @@ main {
 .btn-delete:hover {
   background-color: #d63031;
   border-color: #d63031;
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #2d3436;
+  color: #55efc4;
+  border: 1px solid #55efc4;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, -8px);
 }
 
 @media (max-width: 480px) {

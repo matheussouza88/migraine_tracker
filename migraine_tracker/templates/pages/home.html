@@ -7,6 +7,15 @@
   <div class="card-header-label">Instant Checkup</div>
   <p class="subtitle text-center">Click when you feel a migraine to register that moment</p>
 
+  <div class="severity-picker-group">
+    <span class="picker-label">Severity:</span>
+    <div class="severity-pills">
+      <button type="button" class="btn-pill sev-mild" id="pill-mild" onclick="selectInitialSeverity('mild')">Mild</button>
+      <button type="button" class="btn-pill sev-moderate active" id="pill-moderate" onclick="selectInitialSeverity('moderate')">Moderate</button>
+      <button type="button" class="btn-pill sev-severe" id="pill-severe" onclick="selectInitialSeverity('severe')">Severe</button>
+    </div>
+  </div>
+
   <div class="action-buttons">
     <button id="migraineBtn" class="btn btn-migraine" onclick="logMigraine()">
       ⚡ I Have a Migraine
@@ -65,7 +74,15 @@
         {% for m in migraines %}
         <tr id="migraine-row-{{ m.id }}">
           <td>{{ m.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-          <td><span class="badge severity-badge">{{ m.severity or 'moderate' }}</span></td>
+          <td>
+            <select class="severity-select sev-{{ m.severity or 'moderate' }}"
+                    onchange="updateSeverity({{ m.id }}, this.value, this)"
+                    title="Change severity">
+              <option value="mild" {% if m.severity == 'mild' %}selected{% endif %}>Mild</option>
+              <option value="moderate" {% if m.severity == 'moderate' or not m.severity %}selected{% endif %}>Moderate</option>
+              <option value="severe" {% if m.severity == 'severe' %}selected{% endif %}>Severe</option>
+            </select>
+          </td>
           <td>
             <button class="btn-delete" title="Delete checkup" onclick="deleteMigraine({{ m.id }})">🗑️</button>
           </td>
@@ -110,7 +127,57 @@
   </div>
 </div>
 
+<div id="toast" class="toast"></div>
+
 <script>
+  let currentSeverity = 'moderate';
+
+  function selectInitialSeverity(sev) {
+    currentSeverity = sev;
+    ['mild', 'moderate', 'severe'].forEach(s => {
+      const pill = document.getElementById(`pill-${s}`);
+      if (pill) {
+        if (s === sev) {
+          pill.classList.add('active');
+        } else {
+          pill.classList.remove('active');
+        }
+      }
+    });
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.innerText = msg;
+    toast.classList.add('show');
+    setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2400);
+  }
+
+  async function updateSeverity(id, severity, selectElem) {
+    try {
+      const res = await fetch(`/api/migraine/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ severity })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (selectElem) {
+          selectElem.className = `severity-select sev-${severity}`;
+        }
+        showToast(`Severity updated to ${severity.toUpperCase()}!`);
+      } else {
+        alert(data.error || 'Failed to update severity.');
+      }
+    } catch (err) {
+      console.error('Error updating severity:', err);
+      alert('Network error updating severity.');
+    }
+  }
+
   async function logMigraine() {
     const btn = document.getElementById('migraineBtn');
     const feedback = document.getElementById('migraineFeedback');
@@ -122,15 +189,24 @@
       const res = await fetch('/api/migraine', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ severity: 'moderate' })
+        body: JSON.stringify({ severity: currentSeverity })
       });
       const data = await res.json();
       if (res.ok) {
-        feedback.innerText = '⚡ Migraine checkup registered!';
+        const id = data.checkup.id;
+        feedback.innerHTML = `
+          ⚡ Migraine registered (${currentSeverity})!
+          <div class="quick-severity-adjust">
+            Change:
+            <button class="btn-quick-sev" onclick="updateSeverity(${id}, 'mild'); setTimeout(()=>window.location.reload(), 400)">Mild</button>
+            <button class="btn-quick-sev" onclick="updateSeverity(${id}, 'moderate'); setTimeout(()=>window.location.reload(), 400)">Mod</button>
+            <button class="btn-quick-sev" onclick="updateSeverity(${id}, 'severe'); setTimeout(()=>window.location.reload(), 400)">Severe</button>
+          </div>
+        `;
         feedback.className = 'feedback-msg success';
         setTimeout(() => {
           window.location.reload();
-        }, 700);
+        }, 1200);
       } else {
         feedback.innerText = data.error || 'Failed to register migraine.';
         feedback.className = 'feedback-msg error';

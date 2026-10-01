@@ -9,6 +9,8 @@ from migraine_tracker.database import MedicationLog, MigraineCheckup, db
 bp = Blueprint("pages", __name__)
 logger = logging.getLogger("migraine_tracker.activity")
 
+VALID_SEVERITIES = {"mild", "moderate", "severe"}
+
 
 @bp.route("/health")
 def health():
@@ -78,12 +80,26 @@ def get_status():
 def log_migraine():
     client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "-")
     payload = request.get_json(silent=True) or {}
-    severity = payload.get("severity", "moderate")
+    raw_severity = (payload.get("severity") or "moderate").strip().lower()
+
+    if raw_severity not in VALID_SEVERITIES:
+        return (
+            jsonify(
+                {
+                    "error": (
+                        "Invalid severity level. "
+                        "Must be 'mild', 'moderate', or 'severe'."
+                    )
+                }
+            ),
+            400,
+        )
+
     notes = payload.get("notes")
 
     checkup = MigraineCheckup(
         timestamp=datetime.now(timezone.utc),
-        severity=severity,
+        severity=raw_severity,
         notes=notes,
     )
     db.session.add(checkup)
@@ -93,7 +109,7 @@ def log_migraine():
         "Migraine checkup #%d LOGGED at %s (severity=%s, client: %s)",
         checkup.id,
         checkup.timestamp.isoformat(),
-        severity,
+        raw_severity,
         client_ip,
     )
 
@@ -105,6 +121,57 @@ def log_migraine():
             }
         ),
         201,
+    )
+
+
+@bp.route("/api/migraine/<int:migraine_id>", methods=["PATCH", "PUT"])
+def update_migraine(migraine_id):
+    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "-")
+    entry = db.session.get(MigraineCheckup, migraine_id)
+    if not entry:
+        logger.warning(
+            "Update rejected: Migraine entry #%d not found (client: %s)",
+            migraine_id,
+            client_ip,
+        )
+        return jsonify({"error": "Migraine checkup entry not found."}), 404
+
+    payload = request.get_json(silent=True) or {}
+    if "severity" in payload:
+        raw_severity = (payload.get("severity") or "").strip().lower()
+        if raw_severity not in VALID_SEVERITIES:
+            return (
+                jsonify(
+                    {
+                        "error": (
+                            "Invalid severity level. "
+                            "Must be 'mild', 'moderate', or 'severe'."
+                        )
+                    }
+                ),
+                400,
+            )
+        entry.severity = raw_severity
+
+    if "notes" in payload:
+        entry.notes = payload.get("notes")
+
+    db.session.commit()
+    logger.info(
+        "Migraine checkup #%d UPDATED: severity=%s (client: %s)",
+        migraine_id,
+        entry.severity,
+        client_ip,
+    )
+
+    return (
+        jsonify(
+            {
+                "message": "Migraine severity updated successfully!",
+                "checkup": entry.to_dict(),
+            }
+        ),
+        200,
     )
 
 
