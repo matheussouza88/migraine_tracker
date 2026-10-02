@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="theme-color" content="#12131c">
   <title>Migraine Tracker - {% block title %}{% endblock title %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1.1.0">
 </head>
 <body>
 <header class="app-header">
@@ -22,7 +22,7 @@
     </a>
   </nav>
 </header>
-<section>
+<section class="app-content">
   <main>
     {% block content %}{% endblock content %}
   </main>
