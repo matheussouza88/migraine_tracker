@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+
+{% block title %}Statistics &amp; Analytics{% endblock title %}
+
+{% block content %}
+<div class="stats-header-card tracker-card">
+  <h2>📊 Historical Analytics</h2>
+  <p class="subtitle">Long-term migraine patterns, triggers &amp; medication telemetry</p>
+</div>
+
+<!-- Primary Overview Metric Cards -->
+<div class="stats-overview-grid">
+  <div class="stat-card">
+    <div class="stat-value" id="kpiTotalMigraines">{{ analytics.summary.total_migraines }}</div>
+    <div class="stat-label">Total Migraines</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="kpiTotalMeds">{{ analytics.summary.total_medications }}</div>
+    <div class="stat-label">Total Meds Taken</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="kpiDaysSince">
+      {% if analytics.summary.days_since_last is not none %}
+        {{ analytics.summary.days_since_last }}d
+      {% else %}
+        -
+      {% endif %}
+    </div>
+    <div class="stat-label">Days Since Last</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="kpiMonthlyAvg">{{ analytics.summary.avg_per_month }}</div>
+    <div class="stat-label">Avg / Active Month</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="kpiMedsRatio">{{ analytics.summary.meds_per_migraine }}x</div>
+    <div class="stat-label">Meds / Migraine</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value font-smaller" id="kpiCommonSev">{{ analytics.summary.most_common_severity }}</div>
+    <div class="stat-label">Typical Severity</div>
+  </div>
+</div>
+
+<!-- Clinical Insights Highlights -->
+<div class="tracker-card insights-card">
+  <h3>💡 Key Clinical Insights</h3>
+  <div class="insights-list">
+    <div class="insight-item">
+      <span class="insight-icon">🌅</span>
+      <div class="insight-text">
+        <strong>Peak Onset:</strong> {{ analytics.summary.most_common_time_of_day }}
+        {% for tod in analytics.time_of_day_breakdown %}
+          {% if tod.label == analytics.summary.most_common_time_of_day and tod.percentage > 0 %}
+            <span class="insight-subtext">({{ tod.percentage }}% of all logged migraines occur during this window)</span>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    <div class="insight-item">
+      <span class="insight-icon">⏱️</span>
+      <div class="insight-text">
+        <strong>Average Episode Frequency:</strong>
+        {% if analytics.summary.avg_interval_days %}
+          Every {{ analytics.summary.avg_interval_days }} days
+        {% else %}
+          Insufficient data
+        {% endif %}
+      </div>
+    </div>
+    <div class="insight-item">
+      <span class="insight-icon">🛡️</span>
+      <div class="insight-text">
+        <strong>Longest Migraine-Free Window:</strong>
+        {% if analytics.summary.longest_streak_days %}
+          {{ analytics.summary.longest_streak_days }} days
+        {% else %}
+          -
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Severity Breakdown -->
+<div class="tracker-card">
+  <h3>⚡ Severity Distribution</h3>
+  <p class="subtitle">Breakdown of reported pain intensity</p>
+  
+  {% set total_m = analytics.summary.total_migraines %}
+  {% set mild_pct = ((analytics.severity_counts.mild / total_m) * 100) | round if total_m > 0 else 0 %}
+  {% set mod_pct = ((analytics.severity_counts.moderate / total_m) * 100) | round if total_m > 0 else 0 %}
+  {% set sev_pct = ((analytics.severity_counts.severe / total_m) * 100) | round if total_m > 0 else 0 %}
+
+  <div class="progress-bar-composite">
+    {% if mild_pct > 0 %}
+      <div class="progress-segment seg-mild" style="width: {{ mild_pct }}%" title="Mild: {{ analytics.severity_counts.mild }} ({{ mild_pct }}%)"></div>
+    {% endif %}
+    {% if mod_pct > 0 %}
+      <div class="progress-segment seg-moderate" style="width: {{ mod_pct }}%" title="Moderate: {{ analytics.severity_counts.moderate }} ({{ mod_pct }}%)"></div>
+    {% endif %}
+    {% if sev_pct > 0 %}
+      <div class="progress-segment seg-severe" style="width: {{ sev_pct }}%" title="Severe: {{ analytics.severity_counts.severe }} ({{ sev_pct }}%)"></div>
+    {% endif %}
+  </div>
+
+  <div class="severity-legend-grid">
+    <div class="legend-card sev-mild-box">
+      <div class="legend-badge-row">
+        <span class="badge sev-mild">Mild</span>
+        <span class="legend-count">{{ analytics.severity_counts.mild }}</span>
+      </div>
+      <div class="legend-sub">{{ mild_pct }}% of episodes</div>
+    </div>
+    <div class="legend-card sev-mod-box">
+      <div class="legend-badge-row">
+        <span class="badge sev-moderate">Moderate</span>
+        <span class="legend-count">{{ analytics.severity_counts.moderate }}</span>
+      </div>
+      <div class="legend-sub">{{ mod_pct }}% of episodes</div>
+    </div>
+    <div class="legend-card sev-sev-box">
+      <div class="legend-badge-row">
+        <span class="badge sev-severe">Severe</span>
+        <span class="legend-count">{{ analytics.severity_counts.severe }}</span>
+      </div>
+      <div class="legend-sub">{{ sev_pct }}% of episodes</div>
+    </div>
+  </div>
+</div>
+
+<!-- Time of Day Breakdown -->
+<div class="tracker-card">
+  <h3>🕒 Onset Time of Day</h3>
+  <p class="subtitle">When migraines are first felt or noticed</p>
+  <div class="bar-rows-list">
+    {% for tod in analytics.time_of_day_breakdown %}
+    <div class="bar-row-item">
+      <div class="bar-row-header">
+        <span class="bar-row-label">{{ tod.label }}</span>
+        <span class="bar-row-val">{{ tod.count }} ({{ tod.percentage }}%)</span>
+      </div>
+      <div class="bar-row-track">
+        <div class="bar-row-fill fill-tod" style="width: {{ tod.percentage }}%"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Monthly Trend Timeline -->
+<div class="tracker-card">
+  <h3>📅 Monthly Trend</h3>
+  <p class="subtitle">Comparison between episodes logged and medication intakes</p>
+  
+  <div class="chart-legend-top">
+    <span class="legend-dot dot-migraine"></span> Migraines
+    <span class="legend-dot dot-meds"></span> Medications
+  </div>
+
+  <div class="monthly-bars-container">
+    {% for m in analytics.monthly_trend %}
+      {% set mig_height = ((m.migraines / analytics.max_monthly_count) * 100) | round %}
+      {% set med_height = ((m.medications / analytics.max_monthly_count) * 100) | round %}
+      <div class="monthly-column">
+        <div class="bars-pair">
+          <div class="bar-pillar pillar-migraine" style="height: {{ [mig_height, 6] | max }}%" title="{{ m.label }}: {{ m.migraines }} migraines">
+            {% if m.migraines > 0 %}<span class="pillar-label">{{ m.migraines }}</span>{% endif %}
+          </div>
+          <div class="bar-pillar pillar-med" style="height: {{ [med_height, 6] | max }}%" title="{{ m.label }}: {{ m.medications }} meds">
+            {% if m.medications > 0 %}<span class="pillar-label">{{ m.medications }}</span>{% endif %}
+          </div>
+        </div>
+        <div class="month-x-label">{{ m.label }}</div>
+      </div>
+    {% else %}
+      <p class="text-center text-muted">No monthly historical data logged yet.</p>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Medication Usage Distribution -->
+<div class="tracker-card">
+  <h3>💊 Medication Intake Breakdown</h3>
+  <p class="subtitle">Relative frequency of painkiller vs sumatriptan use</p>
+
+  {% set total_med_count = analytics.summary.total_medications %}
+  {% set pk_count = analytics.medication_counts.Painkiller %}
+  {% set sm_count = analytics.medication_counts.Sumatriptan %}
+  {% set pk_pct = ((pk_count / total_med_count) * 100) | round if total_med_count > 0 else 0 %}
+  {% set sm_pct = ((sm_count / total_med_count) * 100) | round if total_med_count > 0 else 0 %}
+
+  <div class="progress-bar-composite">
+    {% if pk_pct > 0 %}
+      <div class="progress-segment seg-painkiller" style="width: {{ pk_pct }}%" title="Painkiller: {{ pk_count }} ({{ pk_pct }}%)"></div>
+    {% endif %}
+    {% if sm_pct > 0 %}
+      <div class="progress-segment seg-sumatriptan" style="width: {{ sm_pct }}%" title="Sumatriptan: {{ sm_count }} ({{ sm_pct }}%)"></div>
+    {% endif %}
+  </div>
+
+  <div class="med-legend-grid">
+    <div class="legend-card med-pk-box">
+      <div class="legend-badge-row">
+        <span class="med-tag med-painkiller">💊 Painkiller</span>
+        <span class="legend-count">{{ pk_count }}</span>
+      </div>
+      <div class="legend-sub">{{ pk_pct }}% of all intakes</div>
+    </div>
+    <div class="legend-card med-sm-box">
+      <div class="legend-badge-row">
+        <span class="med-tag med-sumatriptan">💉 Sumatriptan</span>
+        <span class="legend-count">{{ sm_count }}</span>
+      </div>
+      <div class="legend-sub">{{ sm_pct }}% of all intakes</div>
+    </div>
+  </div>
+</div>
+
+<!-- Day of Week Distribution -->
+<div class="tracker-card">
+  <h3>🗓️ Day of Week Distribution</h3>
+  <p class="subtitle">Frequency of migraines across days of the week</p>
+  <div class="dow-grid">
+    {% for d in analytics.day_of_week_breakdown %}
+    <div class="dow-item">
+      <div class="dow-name">{{ d.day }}</div>
+      <div class="dow-count">{{ d.count }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock content %}

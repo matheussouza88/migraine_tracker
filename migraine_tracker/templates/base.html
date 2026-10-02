@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#1e1e2f">
+  <meta name="theme-color" content="#12131c">
   <title>Migraine Tracker - {% block title %}{% endblock title %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -13,6 +13,14 @@
     <h1>⚡ Migraine Tracker</h1>
     <p class="tagline">Monitor episodes &amp; medication intake</p>
   </div>
+  <nav class="app-nav">
+    <a href="{{ url_for('pages.home') }}" class="nav-tab {% if request.path == '/' %}active{% endif %}">
+      ⚡ Dashboard
+    </a>
+    <a href="{{ url_for('pages.stats') }}" class="nav-tab {% if request.path == '/stats' %}active{% endif %}">
+      📊 Analytics &amp; Stats
+    </a>
+  </nav>
 </header>
 <section>
   <main>

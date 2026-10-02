@@ -1,7 +1,9 @@
+from datetime import datetime, timezone
+
 import pytest
 
 from migraine_tracker import create_app
-from migraine_tracker.database import db
+from migraine_tracker.database import MedicationLog, MigraineCheckup, db
 
 
 @pytest.fixture
@@ -40,6 +42,7 @@ def test_home_page(client):
     assert b"I Have a Migraine" in response.data
     assert b"Painkiller" in response.data
     assert b"Sumatriptan" in response.data
+    assert b"/stats" in response.data
 
 
 def test_status_endpoint(client):
@@ -206,3 +209,86 @@ def test_delete_nonexistent_records(client):
     resp_med = client.delete("/api/history/medication/9999")
     assert resp_med.status_code == 404
     assert "not found" in resp_med.get_json()["error"]
+
+
+def test_stats_endpoints_empty(client):
+    # HTML stats page when empty
+    resp_html = client.get("/stats")
+    assert resp_html.status_code == 200
+    assert b"Historical Analytics" in resp_html.data
+    assert b"Severity Distribution" in resp_html.data
+
+    # JSON stats API when empty
+    resp_api = client.get("/api/stats")
+    assert resp_api.status_code == 200
+    data = resp_api.get_json()
+    assert data["summary"]["total_migraines"] == 0
+    assert data["summary"]["total_medications"] == 0
+    assert data["summary"]["days_since_last"] is None
+    assert data["summary"]["most_common_severity"] == "N/A"
+    assert data["severity_counts"] == {"mild": 0, "moderate": 0, "severe": 0}
+    assert data["medication_counts"] == {"Painkiller": 0, "Sumatriptan": 0}
+    assert len(data["monthly_trend"]) == 0
+
+
+def test_stats_endpoints_with_data(client, app):
+    with app.app_context():
+        # Add sample migraines
+        m1 = MigraineCheckup(
+            timestamp=datetime(2026, 5, 10, 7, 30, tzinfo=timezone.utc),
+            severity="moderate",
+            notes="Morning onset",
+        )
+        m2 = MigraineCheckup(
+            timestamp=datetime(2026, 6, 15, 8, 0, tzinfo=timezone.utc),
+            severity="severe",
+            notes="Strong pain",
+        )
+        m3 = MigraineCheckup(
+            timestamp=datetime(2026, 7, 20, 18, 0, tzinfo=timezone.utc),
+            severity="mild",
+            notes="Mild headache in evening",
+        )
+        db.session.add_all([m1, m2, m3])
+
+        # Add sample medications
+        med1 = MedicationLog(
+            timestamp=datetime(2026, 5, 10, 8, 0, tzinfo=timezone.utc),
+            medication_type="Painkiller",
+            dosage="500mg",
+        )
+        med2 = MedicationLog(
+            timestamp=datetime(2026, 6, 15, 8, 30, tzinfo=timezone.utc),
+            medication_type="Sumatriptan",
+            dosage="50mg",
+        )
+        med3 = MedicationLog(
+            timestamp=datetime(2026, 6, 15, 10, 0, tzinfo=timezone.utc),
+            medication_type="Painkiller",
+            dosage="500mg",
+        )
+        db.session.add_all([med1, med2, med3])
+        db.session.commit()
+
+    # Test HTML view
+    resp_html = client.get("/stats")
+    assert resp_html.status_code == 200
+    assert b"Historical Analytics" in resp_html.data
+    assert b"Total Migraines" in resp_html.data
+
+    # Test JSON API view
+    resp_api = client.get("/api/stats")
+    assert resp_api.status_code == 200
+    data = resp_api.get_json()
+
+    assert data["summary"]["total_migraines"] == 3
+    assert data["summary"]["total_medications"] == 3
+    assert data["summary"]["meds_per_migraine"] == 1.0
+    assert data["severity_counts"] == {"mild": 1, "moderate": 1, "severe": 1}
+    assert data["medication_counts"] == {"Painkiller": 2, "Sumatriptan": 1}
+    assert len(data["monthly_trend"]) == 3  # May, Jun, Jul 2026
+
+    # Verify time of day classification
+    tod_map = {t["label"]: t["count"] for t in data["time_of_day_breakdown"]}
+    assert tod_map["Early Morning (05-09h)"] == 2
+    assert tod_map["Evening (17-22h)"] == 1

@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, jsonify, render_template, request
 from sqlalchemy import func, select
 
+from migraine_tracker.analytics import calculate_analytics
 from migraine_tracker.database import MedicationLog, MigraineCheckup, db
 
 bp = Blueprint("pages", __name__)
@@ -49,6 +50,42 @@ def home():
         last_migraine=last_migraine,
         last_medication=last_medication,
     )
+
+
+@bp.route("/stats")
+def stats():
+    migraines = db.session.scalars(
+        select(MigraineCheckup).order_by(MigraineCheckup.timestamp.asc())
+    ).all()
+    medications = db.session.scalars(
+        select(MedicationLog).order_by(MedicationLog.timestamp.asc())
+    ).all()
+
+    analytics = calculate_analytics(migraines, medications)
+
+    logger.info(
+        "Stats page accessed: total_migraines=%d, total_meds=%d",
+        analytics["summary"]["total_migraines"],
+        analytics["summary"]["total_medications"],
+    )
+
+    return render_template(
+        "pages/stats.html",
+        analytics=analytics,
+    )
+
+
+@bp.route("/api/stats", methods=["GET"])
+def get_stats_api():
+    migraines = db.session.scalars(
+        select(MigraineCheckup).order_by(MigraineCheckup.timestamp.asc())
+    ).all()
+    medications = db.session.scalars(
+        select(MedicationLog).order_by(MedicationLog.timestamp.asc())
+    ).all()
+
+    analytics = calculate_analytics(migraines, medications)
+    return jsonify(analytics), 200
 
 
 @bp.route("/api/status", methods=["GET"])
