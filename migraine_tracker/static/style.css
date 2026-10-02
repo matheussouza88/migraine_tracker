@@ -12,13 +12,15 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px 14px;
+  padding: 20px 14px 40px;
   -webkit-font-smoothing: antialiased;
 }
 
 .app-header {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 540px;
 }
 
 h1 {
@@ -31,6 +33,38 @@ h1 {
 .tagline {
   font-size: 0.95rem;
   color: #a4b0be;
+}
+
+.app-nav {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.nav-tab {
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 20px;
+  background: #1e202d;
+  color: #a4b0be;
+  border: 1px solid #2f3542;
+  transition: all 0.2s ease;
+}
+
+.nav-tab:hover {
+  color: #f1f2f6;
+  border-color: #485460;
+  transform: translateY(-1px);
+}
+
+.nav-tab.active {
+  background: linear-gradient(135deg, rgba(255, 118, 117, 0.2), rgba(225, 112, 85, 0.25));
+  color: #ff7675;
+  border-color: #ff7675;
+  box-shadow: 0 2px 10px rgba(255, 118, 117, 0.2);
 }
 
 main {
@@ -66,55 +100,53 @@ main {
   text-align: center;
 }
 
+.text-muted {
+  color: #747d8c;
+  font-size: 0.85rem;
+  padding: 16px 0;
+}
+
 .font-smaller {
   font-size: 1.05rem;
 }
 
-.timer-display {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: clamp(2.4rem, 9vw, 3.4rem);
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: #ffeaa7;
-  margin-bottom: 10px;
-}
-
-.timer-status {
-  margin-bottom: 20px;
-}
-
 .badge {
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  display: inline-block;
+  border: 1px solid transparent;
 }
 
-.severity-badge {
-  background-color: rgba(225, 112, 85, 0.2);
-  color: #ff7675;
-  border: 1px solid rgba(225, 112, 85, 0.4);
-  font-size: 0.75rem;
-  padding: 3px 8px;
+/* Distinct Severity Color Palettes */
+.badge.sev-mild, 
+.btn-pill.sev-mild.active, 
+.severity-select.sev-mild,
+.btn-quick-sev.sev-mild {
+  background: rgba(46, 213, 115, 0.18);
+  border-color: #2ed573;
+  color: #2ed573;
 }
 
-.active-badge {
-  background-color: #d63031;
-  color: white;
-  animation: pulse 1.5s infinite;
+.badge.sev-moderate, 
+.btn-pill.sev-moderate.active, 
+.severity-select.sev-moderate,
+.btn-quick-sev.sev-moderate {
+  background: rgba(255, 165, 2, 0.18);
+  border-color: #ffa502;
+  color: #ffa502;
 }
 
-.idle-badge {
-  background-color: #485460;
-  color: #d2dae2;
-}
-
-@keyframes pulse {
-  0% { opacity: 0.8; }
-  50% { opacity: 1; }
-  100% { opacity: 0.8; }
+.badge.sev-severe, 
+.btn-pill.sev-severe.active, 
+.severity-select.sev-severe,
+.btn-quick-sev.sev-severe {
+  background: rgba(255, 71, 87, 0.22);
+  border-color: #ff4757;
+  color: #ff4757;
 }
 
 .action-buttons {
@@ -144,17 +176,6 @@ main {
 }
 
 .btn-migraine:hover, .btn-migraine:active {
-  transform: translateY(-2px);
-  filter: brightness(1.1);
-}
-
-.btn-stop {
-  background: linear-gradient(135deg, #00b894, #00cec9);
-  color: #12131c;
-  box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4);
-}
-
-.btn-stop:hover, .btn-stop:active {
   transform: translateY(-2px);
   filter: brightness(1.1);
 }
@@ -192,29 +213,11 @@ main {
   filter: brightness(1.2);
 }
 
-.btn-pill.active.sev-mild, .severity-select.sev-mild {
-  background: rgba(255, 234, 167, 0.15);
-  border-color: #ffeaa7;
-  color: #ffeaa7;
-}
-
-.btn-pill.active.sev-moderate, .severity-select.sev-moderate {
-  background: rgba(225, 112, 85, 0.2);
-  border-color: #e17055;
-  color: #fab1a0;
-}
-
-.btn-pill.active.sev-severe, .severity-select.sev-severe {
-  background: rgba(214, 48, 49, 0.25);
-  border-color: #d63031;
-  color: #ff7675;
-}
-
 .severity-select {
-  padding: 4px 8px;
+  padding: 5px 10px;
   border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.82rem;
+  font-weight: 700;
   cursor: pointer;
   outline: none;
   background-color: #1e202d;
@@ -232,7 +235,7 @@ main {
   margin-bottom: 4px;
 }
 
-.meds-card .subtitle {
+.meds-card .subtitle, .tracker-card .subtitle {
   font-size: 0.82rem;
   color: #a4b0be;
   margin-bottom: 16px;
@@ -294,10 +297,9 @@ main {
   padding: 3px 8px;
   border-radius: 10px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   border: 1px solid #3d4354;
   background: #252838;
-  color: #d2dae2;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -363,11 +365,6 @@ main {
   font-size: 0.78rem;
 }
 
-.duration-highlight {
-  font-weight: 700;
-  color: #ffeaa7;
-}
-
 .med-tag {
   display: inline-block;
   padding: 4px 10px;
@@ -427,9 +424,300 @@ main {
   transform: translate(-50%, -8px);
 }
 
+/* =========================================
+   STATISTICS & ANALYTICS PAGE STYLES
+   ========================================= */
+
+.stats-header-card h2 {
+  font-size: 1.4rem;
+  color: #ff7675;
+  margin-bottom: 4px;
+}
+
+.stats-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.insights-card h3 {
+  color: #fdcb6e;
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+}
+
+.insights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.insight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #181924;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #2a2e3d;
+}
+
+.insight-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.insight-text {
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: #d2dae2;
+}
+
+.insight-subtext {
+  display: block;
+  font-size: 0.78rem;
+  color: #a4b0be;
+  margin-top: 2px;
+}
+
+/* Composite Progress Bars */
+.progress-bar-composite {
+  width: 100%;
+  height: 14px;
+  border-radius: 8px;
+  background: #151620;
+  overflow: hidden;
+  display: flex;
+  margin-bottom: 16px;
+  border: 1px solid #2f3542;
+}
+
+.progress-segment {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.seg-mild {
+  background: #2ed573;
+}
+
+.seg-moderate {
+  background: #ffa502;
+}
+
+.seg-severe {
+  background: #ff4757;
+}
+
+.seg-painkiller {
+  background: #0984e3;
+}
+
+.seg-sumatriptan {
+  background: #6c5ce7;
+}
+
+/* Legend Grid for Severity and Meds */
+.severity-legend-grid, .med-legend-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.med-legend-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.legend-card {
+  background: #181924;
+  border: 1px solid #2a2e3d;
+  border-radius: 12px;
+  padding: 10px 8px;
+  text-align: center;
+}
+
+.legend-badge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.legend-count {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #ffeaa7;
+}
+
+.legend-sub {
+  font-size: 0.72rem;
+  color: #a4b0be;
+}
+
+/* Time of Day Bars */
+.bar-rows-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bar-row-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bar-row-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+}
+
+.bar-row-label {
+  color: #d2dae2;
+  font-weight: 600;
+}
+
+.bar-row-val {
+  color: #ffa502;
+  font-weight: 700;
+}
+
+.bar-row-track {
+  width: 100%;
+  height: 10px;
+  background: #151620;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #2a2e3d;
+}
+
+.bar-row-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.4s ease;
+}
+
+.fill-tod {
+  background: linear-gradient(90deg, #ffa502, #ff7675);
+}
+
+/* Monthly Trend Columns */
+.chart-legend-top {
+  display: flex;
+  gap: 16px;
+  font-size: 0.8rem;
+  color: #a4b0be;
+  margin-bottom: 14px;
+  align-items: center;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.dot-migraine {
+  background: #ff4757;
+}
+
+.dot-meds {
+  background: #0984e3;
+}
+
+.monthly-bars-container {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 10px 4px 14px;
+  scrollbar-width: thin;
+  scrollbar-color: #3d4354 transparent;
+  align-items: flex-end;
+  min-height: 190px;
+}
+
+.monthly-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 48px;
+}
+
+.bars-pair {
+  display: flex;
+  gap: 4px;
+  align-items: flex-end;
+  height: 130px;
+  width: 100%;
+  justify-content: center;
+}
+
+.bar-pillar {
+  width: 16px;
+  border-radius: 4px 4px 0 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  transition: height 0.3s ease;
+  cursor: default;
+}
+
+.pillar-migraine {
+  background: linear-gradient(180deg, #ff4757, #c0392b);
+}
+
+.pillar-med {
+  background: linear-gradient(180deg, #0984e3, #2980b9);
+}
+
+.pillar-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: white;
+  margin-top: 2px;
+}
+
+.month-x-label {
+  font-size: 0.7rem;
+  color: #a4b0be;
+  margin-top: 6px;
+  white-space: nowrap;
+}
+
+/* Day of Week Grid */
+.dow-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.dow-item {
+  background: #181924;
+  border: 1px solid #2a2e3d;
+  border-radius: 10px;
+  padding: 8px 4px;
+  text-align: center;
+}
+
+.dow-name {
+  font-size: 0.72rem;
+  color: #a4b0be;
+  margin-bottom: 4px;
+}
+
+.dow-count {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffeaa7;
+}
+
 @media (max-width: 480px) {
-  .stats-container {
-    grid-template-columns: 1fr 1fr 1fr;
+  .stats-container, .stats-overview-grid {
+    grid-template-columns: repeat(3, 1fr);
     gap: 6px;
   }
   .stat-value {
@@ -437,5 +725,8 @@ main {
   }
   .stat-label {
     font-size: 0.68rem;
+  }
+  .severity-legend-grid {
+    grid-template-columns: 1fr;
   }
 }

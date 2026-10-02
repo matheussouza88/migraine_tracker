@@ -198,9 +198,9 @@
           ⚡ Migraine registered (${currentSeverity})!
           <div class="quick-severity-adjust">
             Change:
-            <button class="btn-quick-sev" onclick="updateSeverity(${id}, 'mild'); setTimeout(()=>window.location.reload(), 400)">Mild</button>
-            <button class="btn-quick-sev" onclick="updateSeverity(${id}, 'moderate'); setTimeout(()=>window.location.reload(), 400)">Mod</button>
-            <button class="btn-quick-sev" onclick="updateSeverity(${id}, 'severe'); setTimeout(()=>window.location.reload(), 400)">Severe</button>
+            <button class="btn-quick-sev sev-mild" onclick="updateSeverity(${id}, 'mild'); setTimeout(()=>window.location.reload(), 400)">Mild</button>
+            <button class="btn-quick-sev sev-moderate" onclick="updateSeverity(${id}, 'moderate'); setTimeout(()=>window.location.reload(), 400)">Mod</button>
+            <button class="btn-quick-sev sev-severe" onclick="updateSeverity(${id}, 'severe'); setTimeout(()=>window.location.reload(), 400)">Severe</button>
           </div>
         `;
         feedback.className = 'feedback-msg success';
