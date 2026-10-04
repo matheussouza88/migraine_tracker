@@ -51,6 +51,7 @@ def calculate_analytics(
     # Severity distribution
     sev_counter = Counter((m.severity or "moderate").strip().lower() for m in migraines)
     severity_counts = {
+        "headache": sev_counter.get("headache", 0),
         "mild": sev_counter.get("mild", 0),
         "moderate": sev_counter.get("moderate", 0),
         "severe": sev_counter.get("severe", 0),

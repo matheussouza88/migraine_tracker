@@ -10,6 +10,7 @@
   <div class="severity-picker-group">
     <span class="picker-label">Severity:</span>
     <div class="severity-pills">
+      <button type="button" class="btn-pill sev-headache" id="pill-headache" onclick="selectInitialSeverity('headache')">Headache</button>
       <button type="button" class="btn-pill sev-mild" id="pill-mild" onclick="selectInitialSeverity('mild')">Mild</button>
       <button type="button" class="btn-pill sev-moderate active" id="pill-moderate" onclick="selectInitialSeverity('moderate')">Moderate</button>
       <button type="button" class="btn-pill sev-severe" id="pill-severe" onclick="selectInitialSeverity('severe')">Severe</button>
@@ -78,6 +79,7 @@
             <select class="severity-select sev-{{ m.severity or 'moderate' }}"
                     onchange="updateSeverity({{ m.id }}, this.value, this)"
                     title="Change severity">
+              <option value="headache" {% if m.severity == 'headache' %}selected{% endif %}>Headache</option>
               <option value="mild" {% if m.severity == 'mild' %}selected{% endif %}>Mild</option>
               <option value="moderate" {% if m.severity == 'moderate' or not m.severity %}selected{% endif %}>Moderate</option>
               <option value="severe" {% if m.severity == 'severe' %}selected{% endif %}>Severe</option>
@@ -134,7 +136,7 @@
 
   function selectInitialSeverity(sev) {
     currentSeverity = sev;
-    ['mild', 'moderate', 'severe'].forEach(s => {
+    ['headache', 'mild', 'moderate', 'severe'].forEach(s => {
       const pill = document.getElementById(`pill-${s}`);
       if (pill) {
         if (s === sev) {
@@ -198,6 +200,7 @@
           ⚡ Migraine registered (${currentSeverity})!
           <div class="quick-severity-adjust">
             Change:
+            <button class="btn-quick-sev sev-headache" onclick="updateSeverity(${id}, 'headache'); setTimeout(()=>window.location.reload(), 400)">Headache</button>
             <button class="btn-quick-sev sev-mild" onclick="updateSeverity(${id}, 'mild'); setTimeout(()=>window.location.reload(), 400)">Mild</button>
             <button class="btn-quick-sev sev-moderate" onclick="updateSeverity(${id}, 'moderate'); setTimeout(()=>window.location.reload(), 400)">Mod</button>
             <button class="btn-quick-sev sev-severe" onclick="updateSeverity(${id}, 'severe'); setTimeout(()=>window.location.reload(), 400)">Severe</button>

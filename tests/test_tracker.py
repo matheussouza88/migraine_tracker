@@ -226,7 +226,12 @@ def test_stats_endpoints_empty(client):
     assert data["summary"]["total_medications"] == 0
     assert data["summary"]["days_since_last"] is None
     assert data["summary"]["most_common_severity"] == "N/A"
-    assert data["severity_counts"] == {"mild": 0, "moderate": 0, "severe": 0}
+    assert data["severity_counts"] == {
+        "headache": 0,
+        "mild": 0,
+        "moderate": 0,
+        "severe": 0,
+    }
     assert data["medication_counts"] == {"Painkiller": 0, "Sumatriptan": 0}
     assert len(data["monthly_trend"]) == 0
 
@@ -284,7 +289,12 @@ def test_stats_endpoints_with_data(client, app):
     assert data["summary"]["total_migraines"] == 3
     assert data["summary"]["total_medications"] == 3
     assert data["summary"]["meds_per_migraine"] == 1.0
-    assert data["severity_counts"] == {"mild": 1, "moderate": 1, "severe": 1}
+    assert data["severity_counts"] == {
+        "headache": 0,
+        "mild": 1,
+        "moderate": 1,
+        "severe": 1,
+    }
     assert data["medication_counts"] == {"Painkiller": 2, "Sumatriptan": 1}
     assert len(data["monthly_trend"]) == 3  # May, Jun, Jul 2026
 
@@ -292,3 +302,44 @@ def test_stats_endpoints_with_data(client, app):
     tod_map = {t["label"]: t["count"] for t in data["time_of_day_breakdown"]}
     assert tod_map["Early Morning (05-09h)"] == 2
     assert tod_map["Evening (17-22h)"] == 1
+
+
+def test_headache_and_custom_timestamp_checkup(client):
+    # 1. Log a headache with custom timestamp
+    custom_time = "2026-10-04T06:15:00+00:00"
+    resp = client.post(
+        "/api/migraine",
+        json={
+            "severity": "headache",
+            "notes": "Regular morning headache",
+            "timestamp": custom_time,
+        },
+    )
+    assert resp.status_code == 201
+    checkup = resp.get_json()["checkup"]
+    assert checkup["severity"] == "headache"
+    assert checkup["notes"] == "Regular morning headache"
+    assert checkup["timestamp"] == custom_time
+
+    # 2. Update to regular headache
+    update_resp = client.patch(
+        f"/api/migraine/{checkup['id']}",
+        json={"severity": "headache"},
+    )
+    assert update_resp.status_code == 200
+    assert update_resp.get_json()["checkup"]["severity"] == "headache"
+
+    # 3. Stats reflect headache
+    stats_resp = client.get("/api/stats")
+    assert stats_resp.status_code == 200
+    stats_data = stats_resp.get_json()
+    assert stats_data["severity_counts"]["headache"] == 1
+
+    # 4. Invalid timestamp format rejected
+    bad_ts_resp = client.post(
+        "/api/migraine",
+        json={"severity": "headache", "timestamp": "not-a-timestamp"},
+    )
+    assert bad_ts_resp.status_code == 400
+    assert "Invalid timestamp format" in bad_ts_resp.get_json()["error"]
+

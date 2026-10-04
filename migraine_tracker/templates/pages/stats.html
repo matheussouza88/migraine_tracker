@@ -88,11 +88,15 @@
   <p class="subtitle">Breakdown of reported pain intensity</p>
   
   {% set total_m = analytics.summary.total_migraines %}
+  {% set headache_pct = ((analytics.severity_counts.headache / total_m) * 100) | round if total_m > 0 else 0 %}
   {% set mild_pct = ((analytics.severity_counts.mild / total_m) * 100) | round if total_m > 0 else 0 %}
   {% set mod_pct = ((analytics.severity_counts.moderate / total_m) * 100) | round if total_m > 0 else 0 %}
   {% set sev_pct = ((analytics.severity_counts.severe / total_m) * 100) | round if total_m > 0 else 0 %}
 
   <div class="progress-bar-composite">
+    {% if headache_pct > 0 %}
+      <div class="progress-segment seg-headache" style="width: {{ headache_pct }}%" title="Headache: {{ analytics.severity_counts.headache }} ({{ headache_pct }}%)"></div>
+    {% endif %}
     {% if mild_pct > 0 %}
       <div class="progress-segment seg-mild" style="width: {{ mild_pct }}%" title="Mild: {{ analytics.severity_counts.mild }} ({{ mild_pct }}%)"></div>
     {% endif %}
@@ -105,6 +109,13 @@
   </div>
 
   <div class="severity-legend-grid">
+    <div class="legend-card sev-headache-box">
+      <div class="legend-badge-row">
+        <span class="badge sev-headache">Headache</span>
+        <span class="legend-count">{{ analytics.severity_counts.headache }}</span>
+      </div>
+      <div class="legend-sub">{{ headache_pct }}% of episodes</div>
+    </div>
     <div class="legend-card sev-mild-box">
       <div class="legend-badge-row">
         <span class="badge sev-mild">Mild</span>
