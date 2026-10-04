@@ -139,6 +139,15 @@ main {
 }
 
 /* Distinct Severity Color Palettes */
+.badge.sev-headache,
+.btn-pill.sev-headache.active,
+.severity-select.sev-headache,
+.btn-quick-sev.sev-headache {
+  background: rgba(0, 206, 201, 0.18);
+  border-color: #00cec9;
+  color: #00cec9;
+}
+
 .badge.sev-mild, 
 .btn-pill.sev-mild.active, 
 .severity-select.sev-mild,
@@ -515,6 +524,10 @@ main {
   transition: width 0.4s ease;
 }
 
+.seg-headache {
+  background: #00cec9;
+}
+
 .seg-mild {
   background: #2ed573;
 }
@@ -536,14 +549,16 @@ main {
 }
 
 /* Legend Grid for Severity and Meds */
-.severity-legend-grid, .med-legend-grid {
+.severity-legend-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 
 .med-legend-grid {
+  display: grid;
   grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .legend-card {

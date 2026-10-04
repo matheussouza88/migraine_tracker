@@ -10,7 +10,7 @@ from migraine_tracker.database import MedicationLog, MigraineCheckup, db
 bp = Blueprint("pages", __name__)
 logger = logging.getLogger("migraine_tracker.activity")
 
-VALID_SEVERITIES = {"mild", "moderate", "severe"}
+VALID_SEVERITIES = {"headache", "mild", "moderate", "severe"}
 
 
 @bp.route("/health")
@@ -125,7 +125,7 @@ def log_migraine():
                 {
                     "error": (
                         "Invalid severity level. "
-                        "Must be 'mild', 'moderate', or 'severe'."
+                        "Must be 'headache', 'mild', 'moderate', or 'severe'."
                     )
                 }
             ),
@@ -134,8 +134,30 @@ def log_migraine():
 
     notes = payload.get("notes")
 
+    # Optional custom timestamp (e.g. ISO string)
+    custom_ts = None
+    if payload.get("timestamp"):
+        try:
+            parsed_dt = datetime.fromisoformat(payload["timestamp"])
+            if parsed_dt.tzinfo is None:
+                custom_ts = parsed_dt.replace(tzinfo=timezone.utc)
+            else:
+                custom_ts = parsed_dt.astimezone(timezone.utc)
+        except (ValueError, TypeError):
+            return (
+                jsonify(
+                    {
+                        "error": (
+                            "Invalid timestamp format. "
+                            "Please provide a valid ISO 8601 string."
+                        )
+                    }
+                ),
+                400,
+            )
+
     checkup = MigraineCheckup(
-        timestamp=datetime.now(timezone.utc),
+        timestamp=custom_ts or datetime.now(timezone.utc),
         severity=raw_severity,
         notes=notes,
     )
@@ -182,7 +204,7 @@ def update_migraine(migraine_id):
                     {
                         "error": (
                             "Invalid severity level. "
-                            "Must be 'mild', 'moderate', or 'severe'."
+                            "Must be 'headache', 'mild', 'moderate', or 'severe'."
                         )
                     }
                 ),
