@@ -208,31 +208,41 @@ main {
 
 .severity-picker-group {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  width: 100%;
+  max-width: 320px;
   margin: 12px 0 8px;
 }
 
 .picker-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
   color: #a4b0be;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .severity-pills {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 6px;
+  width: 100%;
 }
 
 .btn-pill {
-  padding: 5px 12px;
+  padding: 8px 4px;
   border-radius: 14px;
   border: 1px solid #3d4354;
   background: #181924;
   color: #a4b0be;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
+  text-align: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .btn-pill:hover {
@@ -317,6 +327,8 @@ main {
   gap: 6px;
   margin-top: 6px;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .btn-quick-sev {
@@ -839,5 +851,11 @@ main {
 
   .dow-count {
     font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 340px) {
+  .severity-pills {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
