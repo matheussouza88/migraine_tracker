@@ -342,4 +342,3 @@ def test_headache_and_custom_timestamp_checkup(client):
     )
     assert bad_ts_resp.status_code == 400
     assert "Invalid timestamp format" in bad_ts_resp.get_json()["error"]
-
