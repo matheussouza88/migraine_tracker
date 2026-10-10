@@ -32,6 +32,17 @@ pipeline {
             }
         }
 
+        stage('Gitleaks Scan') {
+            when {
+                expression { env.CHANGE_ID != null }
+            }
+            steps {
+                echo "Running Gitleaks security scan on pull request..."
+                sh 'docker run --rm -v ${WORKSPACE}:/repo:ro zricethezav/gitleaks:latest detect --source=/repo --verbose'
+            }
+        }
+
+
         stage('Build & Test') {
             steps {
                 script {
