@@ -38,7 +38,7 @@ pipeline {
             }
             steps {
                 echo "Running Gitleaks security scan on pull request..."
-                sh 'docker run --rm -v ${WORKSPACE}:/repo:ro zricethezav/gitleaks:latest detect --source=/repo --verbose'
+                sh 'docker run --rm -v jenkins_jenkins_home:/var/jenkins_home:ro zricethezav/gitleaks:latest detect --source="${WORKSPACE}" --verbose'
             }
         }
 
