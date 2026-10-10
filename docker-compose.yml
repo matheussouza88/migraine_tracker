@@ -12,6 +12,7 @@ services:
       - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
+      - TZ=Europe/Dublin
       - LOG_LEVEL=INFO
       - DATABASE_URL=postgresql+psycopg2://migraine_user:${DB_PASSWORD:-migraine_secure_pass}@migraine_tracker_db:5432/migraine_db
       - SERVICE_NAME=migraine-tracker

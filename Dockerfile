@@ -13,9 +13,15 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 # Use a smaller base image for the final stage
 FROM python:3.13.3-slim
 
-# Set environment variables for minimal runtime footprint
+# Install tzdata for accurate timezone support
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends tzdata && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set environment variables for minimal runtime footprint and default timezone
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    TZ=Europe/Dublin
 
 # Set the working directory in the final stage
 WORKDIR /app
