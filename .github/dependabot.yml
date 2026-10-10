@@ -1,0 +1,40 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "deps(python)"
+    labels:
+      - "type: chore"
+      - "scope: python"
+      - "dependencies: python"
+      - "bot: dependabot"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "deps(docker)"
+    labels:
+      - "type: chore"
+      - "scope: docker"
+      - "dependencies: docker"
+      - "bot: dependabot"
+
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "deps(docker-compose)"
+    labels:
+      - "type: chore"
+      - "scope: docker"
+      - "dependencies: docker"
+      - "bot: dependabot"
